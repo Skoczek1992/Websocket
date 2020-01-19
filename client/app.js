@@ -2,6 +2,7 @@
 
 {
   let userName = '';
+  const socket = io();
   const loginForm = document.querySelector('#welcome-form');
   const messagesSection = document.querySelector('#messages-section');
   const messagesList = document.getElementById('messages-list');
@@ -11,12 +12,26 @@
 
   messagesSection.classList.remove('show');
 
+  socket.on('message', ({ author, content }) => addMessage(author, content));
+  socket.on('join', user =>
+    addMessage('Server', `<i><b>${user}</b> has just logged in</i>`)
+  );
+  socket.on('leave', user =>
+    addMessage('Server', `<i><b>${user}</b> has just left</i>`)
+  );
+
+  socket.emit('message', {
+    author: 'Chat Bot',
+    content: 'New user has joined the conversation!',
+  });
+
   const login = function(e) {
     e.preventDefault();
     if (!userNameInput.value) {
       alert('Please enter User Name o_O');
     } else {
       userName = userNameInput.value;
+      socket.emit('join', userName);
       addFormClass();
     }
   };
@@ -27,6 +42,10 @@
       alert('Please enter message o_O');
     } else {
       addMessage(userName, messageContentInput.value);
+      socket.emit('message', {
+        author: userName,
+        content: messageContentInput.value,
+      });
       messageContentInput.value = '';
     }
   };
@@ -40,7 +59,7 @@
     }
   };
 
-  const addMessage = function(author, message) {
+  const addMessage = function(author, content) {
     const htmlContent = document.createElement('li');
     htmlContent.classList.add('message', 'message--received');
     if (author === userName) {
@@ -49,7 +68,7 @@
     htmlContent.innerHTML = `<h3 class='message__author'>${
       userName === author ? 'You' : author
     }</h3>
-  <div class='message__content'>${message}</div>`;
+  <div class='message__content'>${content}</div>`;
     messagesList.appendChild(htmlContent);
   };
 
